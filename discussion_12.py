@@ -16,7 +16,8 @@ def setUpDatabase(db_name):
 # TASK 1
 # CREATE TABLE FOR EMPLOYEE INFORMATION IN DATABASE AND ADD INFORMATION
 def create_employee_table(cur, conn):
-    pass
+    cur.execute("CREATE TABLE IF NOT EXISTS Employees (employee_id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT, job_id INTEGER, hire_date DATE, salary NUMBER)")
+    conn.commit()
 
 # ADD EMPLOYEE'S INFORMTION TO THE TABLE
 
@@ -26,21 +27,61 @@ def add_employee(filename, cur, conn):
     f = open(os.path.abspath(os.path.join(os.path.dirname(__file__), filename)))
     file_data = f.read()
     f.close()
-    # THE REST IS UP TO YOU
-    pass
+    data = json.loads(file_data)
+    for item in data:
+        emp_id = item["employee_id"]
+        first_name = item["first_name"]
+        last_name = item["last_name"]
+        hire_date = item['hire_date']
+        job_id = item['job_id']
+        salary = item['salary']
+        cur.execute('INSERT OR IGNORE INTO Employees(employee_id, first_name, last_name, job_id, hire_date, salary) VALUES (?,?,?,?,?,?)', (emp_id, first_name,last_name,job_id, hire_date,salary))
+        conn.commit()
+    
 
 # TASK 2: GET JOB AND HIRE_DATE INFORMATION
 def job_and_hire_date(cur, conn):
-    pass
+    cur.execute("SELECT Employees.hire_date, Jobs.job_title \
+                FROM Employees JOIN Jobs ON Employees.job_id = jobs.job_id order by employees.hire_date limit 1")
+    tup_list = cur.fetchall()
+    return (tup_list[0][1])
+    
+
 
 # TASK 3: IDENTIFY PROBLEMATIC SALARY DATA
 # Apply JOIN clause to match individual employees
 def problematic_salary(cur, conn):
-    pass
+    cur.execute("SELECT Employees.first_name, Employees.last_name \
+                FROM Employees JOIN Jobs ON Employees.job_id = jobs.job_id WHERE Employees.salary > jobs.max_salary OR Employees.salary < jobs.min_salary")
+    tup_list = cur.fetchall()
+    return tup_list
+
 
 # TASK 4: VISUALIZATION
 def visualization_salary_data(cur, conn):
-    pass
+    plt.figure()
+    cur.execute("SELECT Jobs.job_title, Employees.salary,  \
+                FROM Employees JOIN Jobs ON Employees.job_id = jobs.job_id")
+    tup_list = cur.fetchall()
+
+    x,y = zip(*tup_list)
+    plt.scatter(x,y)
+
+    cur.execute("SELECT Jobs.job_title, Jobs.min_salary,  \
+                FROM Jobs")
+    tup_list = cur.fetchall()
+    x,y = zip(*tup_list)
+    plt.scatter(x,y, color = 'red', marker = 'x')
+
+    cur.execute("SELECT Jobs.job_title, Jobs.max_salary,  \
+                FROM Jobs")
+    tup_list = cur.fetchall()
+    x,y = zip(*tup_list)
+    plt.scatter(x,y, color = 'red', marker = 'x')
+
+    plt.xticks(rotation = 45)
+    plt.tight_layout()
+    plt.show
 
 class TestDiscussion12(unittest.TestCase):
     def setUp(self) -> None:
